@@ -322,8 +322,8 @@ bool parse_args(int argc, char** argv, std::string& wts, std::string& engine, bo
 }
 
 
-// static void CAM_Callback(const sensor_msgs::ImageConstPtr& img_msg_ptr)
-static void CAM_Callback(const std_msgs::String::ConstPtr& msg)
+static void CAM_Callback(const sensor_msgs::ImageConstPtr& img_msg_ptr)
+// static void CAM_Callback(const std_msgs::String::ConstPtr& msg)
 
 {
     // cv_bridge::CvImagePtr cam_cv_ptr = cv_bridge::toCvCopy(img_msg_ptr);
@@ -431,8 +431,8 @@ int main(int argc, char **argv)
     image_transport::ImageTransport it(nh);
     // Register the Subscriber
     // todo:Add a parameter loading class
-    // image_transport::Subscriber image_sub = it.subscribe("/kitti/camera_color_left/image_raw", 10, CAM_Callback);
-    ros::Subscriber sub = nh.subscribe("chatter", 1000, CAM_Callback);
+    image_transport::Subscriber image_sub = it.subscribe("/kitti/camera_color_left/image_raw", 10, CAM_Callback);
+    // ros::Subscriber sub = nh.subscribe("chatter", 1000, CAM_Callback);
     image_transport::Publisher image_pub = it.advertise("image_out", 1);
     chatter_pub = nh.advertise<std_msgs::String>("chatter", 1000);
 
