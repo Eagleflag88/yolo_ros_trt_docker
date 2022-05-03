@@ -82,15 +82,10 @@ RUN source ~/.bashrc
 RUN apt update -y && apt upgrade 
 RUN apt install -y mlocate ros-melodic-pcl-conversions ros-melodic-pcl-ros
 
-# RUN ./tensorrtx/yolov5/build/yolov5 -s tensorrtx/yolov5/build/yolov5s.wts tensorrtx/yolov5/build/yolov5s.engine s
-
-
 # RUN git clone https://github.com/Eagleflag88/yolo_ros_trt_docker.git
 # RUN . /opt/ros/melodic/setup.sh && \
 #     cd /workspace/yolo_ros_trt_docker && \
 #     catkin_make -j2
-
-# CMD ["/bin/bash", "-c", "./tensorrtx/yolov5/build/yolov5 -s tensorrtx/yolov5/build/yolov5s.wts tensorrtx/yolov5/build/yolov5s.engine s"]
 
 # Install detr
 RUN git clone https://github.com/facebookresearch/detr.git
@@ -102,12 +97,17 @@ RUN cp /workspace/tensorrtx/detr/gen_wts.py /workspace/detr/ && \
 RUN cd /workspace/detr && \
     python3 gen_wts.py
 
+RUN ./tensorrtx/yolov5/build/yolov5 -s tensorrtx/yolov5/build/yolov5s.wts tensorrtx/yolov5/build/yolov5s.engine s
+
 RUN cd yolov5/ && \
     ls && \
     wget https://github.com/ultralytics/yolov5/releases/download/v6.1/yolov5l.pt
 
 RUN cd yolov5/ && \
-    python3 gen_wts.py -w yolov5l.pt -o yolov5l.wts
+    python3 gen_wts.py -w yolov5l.pt -o yolov5l.wts && \
+    cp yolov5l.wts /workspace/tensorrtx/yolov5/build/
+
+RUN ./tensorrtx/yolov5/build/yolov5 -s tensorrtx/yolov5/build/yolov5l.wts tensorrtx/yolov5/build/yolov5l.engine l
 
 
 
