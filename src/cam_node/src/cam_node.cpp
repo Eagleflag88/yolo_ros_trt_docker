@@ -52,7 +52,7 @@ static int get_depth(int x, float gd) {
 
 // Declaration of Publishers
 
-static ros::Publisher image_pub;
+static ros::Publisher pub_image_track;
 static ros::Publisher chatter_pub;
 
 // Declaration of Subscribers
@@ -403,6 +403,9 @@ static void CAM_Callback(const sensor_msgs::ImageConstPtr& img_msg_ptr)
     }
     cv::imwrite("_bus.jpg", img);
 
+    sensor_msgs::ImagePtr img_msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", img).toImageMsg();
+    pub_image_track.publish(img_msg);
+
     // Release stream and buffers
     cudaStreamDestroy(stream);
     CUDA_CHECK(cudaFree(img_device));
@@ -424,8 +427,7 @@ int main(int argc, char **argv)
     // Register the Subscriber
     // todo:Add a parameter loading class
     image_transport::Subscriber image_sub = it.subscribe("/camera/image_color", 10, CAM_Callback);
-    // ros::Subscriber sub = nh.subscribe("chatter", 1000, CAM_Callback);
-    image_transport::Publisher image_pub = it.advertise("image_out", 1);
+    pub_image_track = nh.advertise<sensor_msgs::Image>("image_track", 1000);
     chatter_pub = nh.advertise<std_msgs::String>("chatter", 1000);
 
     int count = 0;
