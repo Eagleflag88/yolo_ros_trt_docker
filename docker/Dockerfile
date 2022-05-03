@@ -6,7 +6,7 @@ RUN apt-get clean
 RUN apt-get -y update --fix-missing
 
 # git clone tensorrtx
-RUN git clone https://github.com/wang-xinyu/tensorrtx.git
+RUN git clone https://github.com/Eagleflag88/tensorrtx.git
 
 # install pytorch
 RUN curl https://bootstrap.pypa.io/pip/3.6/get-pip.py -o get-pip.py
@@ -82,6 +82,9 @@ RUN source ~/.bashrc
 RUN apt update -y && apt upgrade 
 RUN apt install -y mlocate ros-melodic-pcl-conversions ros-melodic-pcl-ros
 
+# RUN ./tensorrtx/yolov5/build/yolov5 -s tensorrtx/yolov5/build/yolov5s.wts tensorrtx/yolov5/build/yolov5s.engine s
+
+
 # RUN git clone https://github.com/Eagleflag88/yolo_ros_trt_docker.git
 # RUN . /opt/ros/melodic/setup.sh && \
 #     cd /workspace/yolo_ros_trt_docker && \
@@ -89,7 +92,23 @@ RUN apt install -y mlocate ros-melodic-pcl-conversions ros-melodic-pcl-ros
 
 # CMD ["/bin/bash", "-c", "./tensorrtx/yolov5/build/yolov5 -s tensorrtx/yolov5/build/yolov5s.wts tensorrtx/yolov5/build/yolov5s.engine s"]
 
+# Install detr
+RUN git clone https://github.com/facebookresearch/detr.git
+RUN cd /workspace/detr && \
+    wget https://dl.fbaipublicfiles.com/detr/detr-r50-e632da11.pth
     
+RUN cp /workspace/tensorrtx/detr/gen_wts.py /workspace/detr/ && \
+    pip3 install packaging 
+RUN cd /workspace/detr && \
+    python3 gen_wts.py
+
+RUN cd yolov5/ && \
+    ls && \
+    wget https://github.com/ultralytics/yolov5/releases/download/v6.1/yolov5l.pt
+
+RUN cd yolov5/ && \
+    python3 gen_wts.py -w yolov5l.pt -o yolov5l.wts
+
 
 
 
