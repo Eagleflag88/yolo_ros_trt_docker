@@ -323,19 +323,12 @@ bool parse_args(int argc, char** argv, std::string& wts, std::string& engine, bo
 
 
 static void CAM_Callback(const sensor_msgs::ImageConstPtr& img_msg_ptr)
-// static void CAM_Callback(const std_msgs::String::ConstPtr& msg)
-
 {
-    // cv_bridge::CvImagePtr cam_cv_ptr = cv_bridge::toCvCopy(img_msg_ptr);
-    // ROS_INFO("Get a image from camera");
+    cv_bridge::CvImagePtr cam_cv_ptr = cv_bridge::toCvCopy(img_msg_ptr);
+    ROS_INFO("Get a image from camera");
     // std::cout << "Number of column is " << cam_cv_ptr->image.cols << std::endl;
-    // cv::Mat img;
-    // img = cam_cv_ptr->image;
-    // std::cout << "the type of the read image is " << img.type() << std::endl;
-
-    ROS_INFO("Get a string msg");
-
-    cv::Mat img = cv::imread("/workspace/tensorrtx/yolov5/samples/bus.jpg");
+    cv::Mat img;
+    img = cam_cv_ptr->image;
 
     // Deserialize the model into stream 
     std::ifstream file(engine_name, std::ios::binary);
@@ -393,8 +386,7 @@ static void CAM_Callback(const sensor_msgs::ImageConstPtr& img_msg_ptr)
     //copy data to device memory
     CUDA_CHECK(cudaMemcpyAsync(img_device,img_host,size_image,cudaMemcpyHostToDevice,stream));
     preprocess_kernel_img(img_device, img.cols, img.rows, buffer_idx, INPUT_W, INPUT_H, stream);       
-    // buffer_idx += size_image_dst;
-        // }
+
     // Run inference
     auto start = std::chrono::system_clock::now();
     doInference(*context, stream, (void**)buffers, prob, BATCH_SIZE);
@@ -431,7 +423,7 @@ int main(int argc, char **argv)
     image_transport::ImageTransport it(nh);
     // Register the Subscriber
     // todo:Add a parameter loading class
-    image_transport::Subscriber image_sub = it.subscribe("/kitti/camera_color_left/image_raw", 10, CAM_Callback);
+    image_transport::Subscriber image_sub = it.subscribe("/camera/image_color", 10, CAM_Callback);
     // ros::Subscriber sub = nh.subscribe("chatter", 1000, CAM_Callback);
     image_transport::Publisher image_pub = it.advertise("image_out", 1);
     chatter_pub = nh.advertise<std_msgs::String>("chatter", 1000);
@@ -456,130 +448,6 @@ int main(int argc, char **argv)
     }
 
     std::cout << "engine dir is " << engine_name << std::endl;
-
-    // deserialize the .engine and run inference
-
-    // // Deserialize the model into stream 
-    // std::ifstream file(engine_name, std::ios::binary);
-    // if (!file.good()) {
-    //     std::cerr << "read " << engine_name << " error!" << std::endl;
-    //     return -1;
-    // }
-    // char *trtModelStream = nullptr;
-    // size_t size = 0;
-    // file.seekg(0, file.end);
-    // size = file.tellg();
-    // file.seekg(0, file.beg);
-    // trtModelStream = new char[size];
-    // assert(trtModelStream);
-    // file.read(trtModelStream, size);
-    // file.close();
-
-    // std::cout << "Finish Deserialization " << std::endl;
-
-    // // Get input file
-    // std::vector<std::string> file_names;
-    // if (read_files_in_dir(img_dir.c_str(), file_names) < 0) {
-    //     std::cerr << "read_files_in_dir failed." << std::endl;
-    //     return -1;
-    // }
-
-    // std::cout << "Got the intput " << std::endl;
-
-    // static float prob[BATCH_SIZE * OUTPUT_SIZE];
-    // IRuntime* runtime = createInferRuntime(gLogger);
-    // assert(runtime != nullptr);
-    // ICudaEngine* engine = runtime->deserializeCudaEngine(trtModelStream, size);
-    // assert(engine != nullptr);
-    // IExecutionContext* context = engine->createExecutionContext();
-    // assert(context != nullptr);
-    // delete[] trtModelStream;
-    // assert(engine->getNbBindings() == 2);
-    // float* buffers[2];
-    // // In order to bind the buffers, we need to know the names of the input and output tensors.
-    // // Note that indices are guaranteed to be less than IEngine::getNbBindings()
-    // const int inputIndex = engine->getBindingIndex(INPUT_BLOB_NAME);
-    // const int outputIndex = engine->getBindingIndex(OUTPUT_BLOB_NAME);
-    // assert(inputIndex == 0);
-    // assert(outputIndex == 1);
-    // // Create GPU buffers on device
-    // CUDA_CHECK(cudaMalloc((void**)&buffers[inputIndex], BATCH_SIZE * 3 * INPUT_H * INPUT_W * sizeof(float)));
-    // CUDA_CHECK(cudaMalloc((void**)&buffers[outputIndex], BATCH_SIZE * OUTPUT_SIZE * sizeof(float)));
-
-    // // Create stream
-    // cudaStream_t stream;
-    // CUDA_CHECK(cudaStreamCreate(&stream));
-    // uint8_t* img_host = nullptr;
-    // uint8_t* img_device = nullptr;
-    // // prepare input data cache in pinned memory 
-    // CUDA_CHECK(cudaMallocHost((void**)&img_host, MAX_IMAGE_INPUT_SIZE_THRESH * 3));
-    // // prepare input data cache in device memory
-    // CUDA_CHECK(cudaMalloc((void**)&img_device, MAX_IMAGE_INPUT_SIZE_THRESH * 3));
-
-    // std::cout << "Finish Cuda Memory Setup " << std::endl;
-
-    // int fcount = 0;
-    // std::vector<cv::Mat> imgs_buffer(BATCH_SIZE);
-    // for (int f = 0; f < (int)file_names.size(); f++) {
-    //     fcount++;
-    //     std::cout << "fcount is " << fcount << std::endl
-    //               << "f is " << f << std::endl
-    //               << "inputIndex is " << inputIndex << std::endl
-    //               << "outputIndex is " << outputIndex << std::endl;
-
-    //     if (fcount < BATCH_SIZE && f + 1 != (int)file_names.size()) continue;
-    //     //auto start = std::chrono::system_clock::now();
-    //     float* buffer_idx = (float*)buffers[inputIndex];
-    //     for (int b = 0; b < fcount; b++) {
-    //         std::cout << "b is " << b << std::endl;
-    //         std::cout << "buffer_idx is " << buffer_idx << std::endl;
-    //         cv::Mat img = cv::imread(img_dir + "/" + file_names[f - fcount + 1 + b]);
-    //         if (img.empty()) continue;
-    //         imgs_buffer[b] = img;
-    //         size_t  size_image = img.cols * img.rows * 3;
-    //         size_t  size_image_dst = INPUT_H * INPUT_W * 3;
-    //         //copy data to pinned memory
-    //         memcpy(img_host,img.data,size_image);
-    //         //copy data to device memory
-    //         CUDA_CHECK(cudaMemcpyAsync(img_device,img_host,size_image,cudaMemcpyHostToDevice,stream));
-    //         preprocess_kernel_img(img_device, img.cols, img.rows, buffer_idx, INPUT_W, INPUT_H, stream);       
-    //         buffer_idx += size_image_dst;
-    //     }
-    //     // Run inference
-    //     auto start = std::chrono::system_clock::now();
-    //     doInference(*context, stream, (void**)buffers, prob, BATCH_SIZE);
-    //     auto end = std::chrono::system_clock::now();
-    //     std::cout << "inference time: " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms" << std::endl;
-    //     std::vector<std::vector<Yolo::Detection>> batch_res(fcount);
-    //     for (int b = 0; b < fcount; b++) {
-    //         auto& res = batch_res[b];
-    //         nms(res, &prob[b * OUTPUT_SIZE], CONF_THRESH, NMS_THRESH);
-    //     }
-    //     for (int b = 0; b < fcount; b++) {
-    //         auto& res = batch_res[b];
-    //         cv::Mat img = imgs_buffer[b];
-    //         for (size_t j = 0; j < res.size(); j++) {
-    //             cv::Rect r = get_rect(img, res[j].bbox);
-    //             cv::rectangle(img, r, cv::Scalar(0x27, 0xC1, 0x36), 2);
-    //             cv::putText(img, std::to_string((int)res[j].class_id), cv::Point(r.x, r.y - 1), cv::FONT_HERSHEY_PLAIN, 1.2, cv::Scalar(0xFF, 0xFF, 0xFF), 2);
-    //         }
-    //         cv::imwrite("_" + file_names[f - fcount + 1 + b], img);
-    //     }
-    //     fcount = 0;
-    // }
-
-    // // Release stream and buffers
-    // cudaStreamDestroy(stream);
-    // CUDA_CHECK(cudaFree(img_device));
-    // CUDA_CHECK(cudaFreeHost(img_host));
-    // CUDA_CHECK(cudaFree(buffers[inputIndex]));
-    // CUDA_CHECK(cudaFree(buffers[outputIndex]));
-    // // Destroy the engine
-    // context->destroy();
-    // engine->destroy();
-    // runtime->destroy();
-
-    std::cout << "cam_node cout " << std::endl;
 
     while(ros::ok())
     {
