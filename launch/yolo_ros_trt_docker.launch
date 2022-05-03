@@ -1,0 +1,5 @@
+<launch>
+    <node pkg="cam_node"  type="cam_node"  name="detector"  output="screen"></node>
+    <node type="rviz" name="rviz" pkg="rviz" args="-d $(find localization_ndt)/rviz/drive.rviz"/>
+    <node pkg="rosbag" type="play" name="player" output="screen" args="/home/eagleflag/Downloads/Dataset/demo_rosbag.bag"/>
+</launch>

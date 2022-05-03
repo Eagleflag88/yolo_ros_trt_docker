@@ -34,6 +34,8 @@ link_directories(/usr/lib/x86_64-linux-gnu/)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -Ofast -g -Wfatal-errors -D_MWAITXINTRIN_H_INCLUDED")
 
+catkin_package()
+
 ###########
 ## Build ##
 ###########
@@ -53,7 +55,8 @@ target_link_libraries(myplugins nvinfer cudart)
 cuda_add_executable(cam_node
         src/cam_node.cpp
         ${YOLO_PROJECT_DIR}/calibrator.cpp
-        ${YOLO_PROJECT_DIR}/preprocess.cu)
+        ${YOLO_PROJECT_DIR}/preprocess.cu
+        )
         
 target_link_libraries(cam_node
         ${catkin_LIBRARIES}
