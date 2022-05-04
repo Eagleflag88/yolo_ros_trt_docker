@@ -1,0 +1,4 @@
+<launch>
+    <node pkg="yolo_deepsort"  type="yolo_deepsort_node"  name="detector_tracker"  output="screen" ></node>
+    <!-- <node type="rviz" name="rviz" pkg="rviz" args="-d $(find cam_node)/rviz/yolo_ros_trt_docker.rviz"/> -->
+</launch>
