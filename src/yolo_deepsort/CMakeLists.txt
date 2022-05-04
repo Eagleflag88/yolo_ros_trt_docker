@@ -22,8 +22,6 @@ find_package(catkin REQUIRED COMPONENTS
 find_package(CUDA REQUIRED)
 find_package(OpenCV)
 
-set(YOLO_PROJECT_DIR "/workspace/tensorrtx/yolov5")
-
 # include and link dirs of cuda and tensorrt, you need adapt them if yours are different
 # cuda
 include_directories(/usr/local/cuda/include)
@@ -39,25 +37,43 @@ catkin_package()
 ###########
 ## Build ##
 ###########
-
+include_directories(${PROJECT_SOURCE_DIR}/yolo/include)
+include_directories(${PROJECT_SOURCE_DIR}/deepsort/include)
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(
         include
         ${catkin_INCLUDE_DIRS}
-        ${YOLO_PROJECT_DIR}
         ${OpenCV_INCLUDE_DIRS}
+        "/usr/include/eigen3"
 )
 
+# ===== deepsort =====
+aux_source_directory(${PROJECT_SOURCE_DIR}/deepsort/src SRC_DIR)
+add_library(deepsort SHARED ${SRC_DIR})
+target_link_libraries(deepsort 
+    ${CUDA_LIBS} ${OpenCV_LIBS} 
+    cudart nvinfer nvonnxparser
+)
 
-cuda_add_executable(yolo_deepsort_node
-        src/yolo_deepsort.cpp
-        )
-        
-target_link_libraries(yolo_deepsort_node
-        ${catkin_LIBRARIES}
-        ${OpenCV_LIBS}
-        nvinfer
-        cudart
-        myplugins
-        )
+# ===== yolo =====
+include_directories(${PROJECT_SOURCE_DIR}/yolo/include)
+aux_source_directory(${PROJECT_SOURCE_DIR}/yolo/src YOLO_SRC_DIR)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -Ofast -Wfatal-errors -D_MWAITXINTRIN_H_INCLUDED")
+
+cuda_add_library(yolov5_trt SHARED ${PROJECT_SOURCE_DIR}/yolo/include/yololayer.cu ${PROJECT_SOURCE_DIR}/yolo/src/yolov5_lib.cpp)
+target_link_libraries(yolov5_trt nvinfer cudart deepsort) 
+
+# ===== main =====
+aux_source_directory(${PROJECT_SOURCE_DIR}/src M_SRC_DIR)
+include_directories(${PROJECT_SOURCE_DIR}/include)
+
+add_executable(yolo_deepsort_node ${M_SRC_DIR})
+
+target_link_libraries(yolo_deepsort_node 
+                        nvinfer 
+                        cudart 
+                        yolov5_trt
+                        ${catkin_LIBRARIES}
+                        ${OpenCV_LIBS}
+                        )
