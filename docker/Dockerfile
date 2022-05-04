@@ -109,6 +109,41 @@ RUN cd yolov5/ && \
 
 RUN ./tensorrtx/yolov5/build/yolov5 -s tensorrtx/yolov5/build/yolov5l.wts tensorrtx/yolov5/build/yolov5l.engine l
 
+# Install deep sort pytorch
+RUN git clone https://github.com/Eagleflag88/deep_sort_pytorch.git
+RUN git clone https://github.com/Eagleflag88/deepsort-tensorrt.git
+
+RUN cd deep_sort_pytorch/ && \
+    git submodule update --init --recursive
+
+RUN pip3 install easydict
+
+RUN cp /workspace/deepsort-tensorrt/exportOnnx.py /workspace/deep_sort_pytorch/ && \
+    cd /workspace/deep_sort_pytorch/ && \
+    python3 exportOnnx.py && \
+    mv deepsort.onnx /workspace/deepsort-tensorrt/resources
+
+RUN cd /workspace/deepsort-tensorrt/ && \
+    mkdir build && \
+    cd build && \
+    cmake .. && \
+    make && \
+    ./onnx2engine ../resources/deepsort.onnx ../resources/deepsort.engine
+
+RUN git clone https://github.com/Eagleflag88/yolov5-deepsort-tensorrt.git
+
+RUN cd /workspace/yolov5-deepsort-tensorrt/ && \
+    mkdir build && \
+    cd build && \
+    cmake .. && \
+    make 
+
+
+
+
+
+
+
 
 
 

@@ -426,7 +426,7 @@ int main(int argc, char **argv)
     image_transport::ImageTransport it(nh);
     // Register the Subscriber
     // todo:Add a parameter loading class
-    image_transport::Subscriber image_sub = it.subscribe("/camera/image_color", 10, CAM_Callback);
+    image_transport::Subscriber image_sub = it.subscribe("/kitti/camera_color_left/image_raw", 10, CAM_Callback);
     pub_image_track = nh.advertise<sensor_msgs::Image>("image_track", 1000);
     chatter_pub = nh.advertise<std_msgs::String>("chatter", 1000);
 
