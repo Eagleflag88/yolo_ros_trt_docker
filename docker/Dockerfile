@@ -82,11 +82,6 @@ RUN source ~/.bashrc
 RUN apt update -y && apt upgrade 
 RUN apt install -y mlocate ros-melodic-pcl-conversions ros-melodic-pcl-ros
 
-# RUN git clone https://github.com/Eagleflag88/yolo_ros_trt_docker.git
-# RUN . /opt/ros/melodic/setup.sh && \
-#     cd /workspace/yolo_ros_trt_docker && \
-#     catkin_make -j2
-
 # Install detr
 RUN git clone https://github.com/facebookresearch/detr.git
 RUN cd /workspace/detr && \
@@ -138,6 +133,64 @@ RUN cd /workspace/yolov5-deepsort-tensorrt/ && \
     cmake .. && \
     make 
 
+# Install ulfd
+
+RUN apt install -y iputils-ping
+
+RUN git clone https://github.com/Eagleflag88/Ultra-Fast-Lane-Detection.git
+
+RUN cp /workspace/tensorrtx/ufld/gen_wts.py /workspace/Ultra-Fast-Lane-Detection/ && \
+    cd /workspace/Ultra-Fast-Lane-Detection/model && \
+    cat tusimple0* > tusimple.tar.gz && \
+    tar xvzf tusimple.tar.gz && \
+    mv tusimple/tusimple_18.pth /workspace/Ultra-Fast-Lane-Detection/ && \
+    cd /workspace/Ultra-Fast-Lane-Detection/ && \
+    python3 gen_wts.py && \
+    mv lane.wts /workspace/tensorrtx/ufld/
+
+RUN cd /workspace/tensorrtx/ufld/ && \
+    mkdir build && \
+    cd build && \
+    cmake .. && \
+    make && \
+    ./lane_det -s
+    # ./lane_det -d ../samples/
+
+# Install HRNet
+RUN git clone https://github.com/Eagleflag88/HRNet-Semantic-Segmentation.git
+
+RUN cd /workspace/HRNet-Semantic-Segmentation/model && \
+    cat hrnet0* > hrnet.tar.gz && \
+    tar xvzf hrnet.tar.gz && \
+    cp /workspace/tensorrtx/hrnet/hrnet-semantic-segmentation/gen_wts.py /workspace/HRNet-Semantic-Segmentation/tools/ && \
+    cd /workspace/HRNet-Semantic-Segmentation/ && \
+    pip3 install yacs && \
+    python3 tools/gen_wts.py --cfg experiments/cityscapes/seg_hrnet_w48_train_512x1024_sgd_lr1e-2_wd5e-4_bs_12_epoch484.yaml --ckpt_path model/hrnet/hrnet_w48_cityscapes_cls19_1024x2048_trainset_pytorch_v11.pth --save_path hrnet_w48.wts && \
+    cp hrnet_w48.wts /workspace/tensorrtx/hrnet/hrnet-semantic-segmentation/
+
+RUN cd /workspace/tensorrtx/hrnet/hrnet-semantic-segmentation/ && \
+    mkdir build && cd build && \
+    cmake .. && \
+    make && \
+    ./hrnet -s ../hrnet_w48.wts hrnet_w48.engine 48 && \
+    ./hrnet -d  ./hrnet_w48.engine ../../../ufld/samples/
+
+# Install swin transformer -> Unsuccessful
+RUN git clone https://github.com/Eagleflag88/Swin-Transformer.git
+
+RUN cd /workspace/Swin-Transformer/models && \
+    cat swin_transformer0* > swin_transformer.tar.gz && \
+    tar xvzf swin_transformer.tar.gz && \
+    cp /workspace/tensorrtx/swin-transformer/semantic-segmentation/gen_wts.py /workspace/Swin-Transformer/
+
+
+
+
+
+# RUN git clone https://github.com/Eagleflag88/yolo_ros_trt_docker.git
+# RUN . /opt/ros/melodic/setup.sh && \
+#     cd /workspace/yolo_ros_trt_docker && \
+#     catkin_make -j2
 
 
 
