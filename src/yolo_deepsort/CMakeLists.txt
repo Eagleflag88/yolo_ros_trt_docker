@@ -39,6 +39,7 @@ catkin_package()
 ###########
 include_directories(${PROJECT_SOURCE_DIR}/yolo/include)
 include_directories(${PROJECT_SOURCE_DIR}/deepsort/include)
+include_directories(${PROJECT_SOURCE_DIR}/hrnet_seg/include)
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(
@@ -63,6 +64,14 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -Ofast -Wfatal-errors -
 
 cuda_add_library(yolov5_trt SHARED ${PROJECT_SOURCE_DIR}/yolo/include/yololayer.cu ${PROJECT_SOURCE_DIR}/yolo/src/yolov5_lib.cpp)
 target_link_libraries(yolov5_trt nvinfer cudart deepsort) 
+
+# # ===== hrnet =====
+# aux_source_directory(${PROJECT_SOURCE_DIR}/hrnet_seg/src SRC_DIR)
+# add_library(hrnet_seg SHARED ${SRC_DIR})
+# target_link_libraries(hrnet_seg
+#     ${CUDA_LIBS} ${OpenCV_LIBS} 
+#     cudart nvinfer nvonnxparser
+# )
 
 # ===== main =====
 aux_source_directory(${PROJECT_SOURCE_DIR}/src M_SRC_DIR)
