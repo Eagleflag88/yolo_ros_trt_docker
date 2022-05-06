@@ -2,7 +2,7 @@
  * @Author: Eagleflag88 yijiang.xie@foxmail.com
  * @Date: 2022-05-06 18:24:23
  * @LastEditors: Eagleflag88 yijiang.xie@foxmail.com
- * @LastEditTime: 2022-05-06 23:10:28
+ * @LastEditTime: 2022-05-07 00:13:52
  * @FilePath: /yolo_ros_trt_docker/src/yolo_deepsort/src/yolo_deepsort.cpp
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -99,12 +99,12 @@ static void CAM_Callback(const sensor_msgs::ImageConstPtr& img_msg_ptr)
     auto end = std::chrono::system_clock::now();
     int delay_infer = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
     std::cout  << "delay_infer:" << delay_infer << "ms" << std::endl;
-    yosort.showDetection(frame,det);
+    yosort.showDetection(frame, det);
     
     // Semantic Segmentation
     cv::Mat frame_seg_out;
     yosort.TrtSeg(frame_seg_in, frame_seg_out);
-    // cv::waitKey(0);
-    // cv::imshow("seg_img", frame_seg_out);
+    cv::waitKey(1);
+    cv::imshow("seg_img", frame_seg_out);
 
 }

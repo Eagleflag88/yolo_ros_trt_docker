@@ -16,12 +16,12 @@ static Logger gLogger;
 #define DEVICE 0 // GPU id
 #define BATCH_SIZE 1
 
-const char *INPUT_BLOB_NAME = "data";
-const char *OUTPUT_BLOB_NAME = "output";
-static const int INPUT_H = 512;
-static const int INPUT_W = 1024;
-static const int NUM_CLASSES = 19;
-static const int OUTPUT_SIZE = INPUT_H * INPUT_W;
+const char *INPUT_BLOB_NAME_HR = "data";
+const char *OUTPUT_BLOB_NAME_HR = "output";
+static const int INPUT_H_HR = 512;
+static const int INPUT_W_HR = 1024;
+static const int NUM_CLASSES_HR = 19;
+static const int OUTPUT_SIZE_HR = INPUT_H_HR * INPUT_W_HR;
 
 typedef struct 
 {
@@ -38,11 +38,11 @@ typedef struct
 
 // static void doInference(IExecutionContext& context, cudaStream_t& stream, void **buffers, float* input, int* output, int batchSize) {
 //     // DMA input batch data to device, infer on the batch asynchronously, and DMA output back to host
-//     CUDA_CHECK(cudaMemcpyAsync(buffers[0], input, batchSize * 3 * INPUT_H * INPUT_W * sizeof(float), cudaMemcpyHostToDevice, stream));
-//     //cudaMemcpyAsync(buffers[0], input, batchSize * 3 * INPUT_H * INPUT_W * sizeof(float), cudaMemcpyHostToDevice, stream);
+//     CUDA_CHECK(cudaMemcpyAsync(buffers[0], input, batchSize * 3 * INPUT_H_HR * INPUT_W_HR * sizeof(float), cudaMemcpyHostToDevice, stream));
+//     //cudaMemcpyAsync(buffers[0], input, batchSize * 3 * INPUT_H_HR * INPUT_W_HR * sizeof(float), cudaMemcpyHostToDevice, stream);
 //     context.enqueue(batchSize, buffers, stream, nullptr);
-//     CUDA_CHECK(cudaMemcpyAsync(output, buffers[1], batchSize * OUTPUT_SIZE * sizeof(int), cudaMemcpyDeviceToHost, stream));
-//     //cudaMemcpyAsync(output, buffers[1], batchSize * OUTPUT_SIZE * sizeof(float), cudaMemcpyDeviceToHost, stream);
+//     CUDA_CHECK(cudaMemcpyAsync(output, buffers[1], batchSize * OUTPUT_SIZE_HR * sizeof(int), cudaMemcpyDeviceToHost, stream));
+//     //cudaMemcpyAsync(output, buffers[1], batchSize * OUTPUT_SIZE_HR * sizeof(float), cudaMemcpyDeviceToHost, stream);
 //     cudaStreamSynchronize(stream);
 // }
 
@@ -75,12 +75,12 @@ void * hrnet_trt_create(const char * engine_name)
         return NULL;
 
     cudaSetDeviceFlags(cudaDeviceMapHost);
-    // trt_ctx->data = new float[BATCH_SIZE * 3 * INPUT_H * INPUT_W];
-    // trt_ctx->prob = new int[BATCH_SIZE * OUTPUT_SIZE];
+    trt_ctx->data = new float[BATCH_SIZE * 3 * INPUT_H_HR * INPUT_W_HR];
+    trt_ctx->prob = new int[BATCH_SIZE * OUTPUT_SIZE_HR];
     // Create GPU buffers on device
     printf("hrnet_seg_trt_create  buffer ... \n");
-    CHECK(cudaHostAlloc((void **)&trt_ctx->data, BATCH_SIZE * 3 * INPUT_H * INPUT_W * sizeof(float), cudaHostAllocMapped));
-    CHECK(cudaHostAlloc((void **)&trt_ctx->prob, BATCH_SIZE * OUTPUT_SIZE * sizeof(int), cudaHostAllocMapped));
+    CHECK(cudaHostAlloc((void **)&trt_ctx->data, BATCH_SIZE * 3 * INPUT_H_HR * INPUT_W_HR * sizeof(float), cudaHostAllocMapped));
+    CHECK(cudaHostAlloc((void **)&trt_ctx->prob, BATCH_SIZE * OUTPUT_SIZE_HR * sizeof(int), cudaHostAllocMapped));
 
     trt_ctx->runtime = createInferRuntime(gLogger);
     assert(trt_ctx->runtime != nullptr);
@@ -93,13 +93,14 @@ void * hrnet_trt_create(const char * engine_name)
 
     // In order to bind the buffers, we need to know the names of the input and output tensors.
     // Note that indices are guaranteed to be less than IEngine::getNbBindings()
-    trt_ctx->inputIndex = trt_ctx->engine->getBindingIndex(INPUT_BLOB_NAME);
-    trt_ctx->outputIndex = trt_ctx->engine->getBindingIndex(OUTPUT_BLOB_NAME);
+    trt_ctx->inputIndex = trt_ctx->engine->getBindingIndex(INPUT_BLOB_NAME_HR);
+    trt_ctx->outputIndex = trt_ctx->engine->getBindingIndex(OUTPUT_BLOB_NAME_HR);
+    std::cout << "OUTPUT_BLOB_NAME_HR is " << OUTPUT_BLOB_NAME_HR << std::endl;
     assert(trt_ctx->inputIndex == 0);
     assert(trt_ctx->outputIndex == 1);
 
-    // CUDA_CHECK(cudaMalloc(&trt_ctx->buffers[trt_ctx->inputIndex], BATCH_SIZE * 3 * INPUT_H * INPUT_W * sizeof(float)));
-    // CUDA_CHECK(cudaMalloc(&trt_ctx->buffers[trt_ctx->outputIndex], BATCH_SIZE * OUTPUT_SIZE * sizeof(float)));   
+    // CUDA_CHECK(cudaMalloc(&trt_ctx->buffers[trt_ctx->inputIndex], BATCH_SIZE * 3 * INPUT_H_HR * INPUT_W_HR * sizeof(float)));
+    // CUDA_CHECK(cudaMalloc(&trt_ctx->buffers[trt_ctx->outputIndex], BATCH_SIZE * OUTPUT_SIZE_HR * sizeof(float)));   
 
     printf("hrnet_seg_trt_create  stream ... \n");
     CHECK(cudaStreamCreate(&trt_ctx->cuda_stream));
@@ -107,7 +108,7 @@ void * hrnet_trt_create(const char * engine_name)
     return (void *)trt_ctx;
 }
 
-int hrnet_trt_seg(void *h, cv::Mat &img,cv::Mat& outimg)
+int hrnet_trt_seg(void *h, cv::Mat &img,cv::Mat& im_color)
 {
     HrnetTRTContext *trt_ctx;
     int i;
@@ -117,33 +118,19 @@ int hrnet_trt_seg(void *h, cv::Mat &img,cv::Mat& outimg)
     trt_ctx = (HrnetTRTContext *)h;
     
     cv::Mat pr_img;
-    cv::Mat img_BGR = cv::imread("/workspace/tensorrtx/ufld/samples/Strada_Provinciale_BS_510_Sebina_Orientale.jpg", 1); // BGR
-    cv::cvtColor(img_BGR, pr_img, cv::COLOR_BGR2RGB);
-    cv::resize(pr_img, pr_img, cv::Size(INPUT_W, INPUT_H));
+    // cv::Mat img = cv::imread("/workspace/tensorrtx/ufld/samples/Strada_Provinciale_BS_510_Sebina_Orientale.jpg", 1); // BGR
+    cv::cvtColor(img, pr_img, cv::COLOR_BGR2RGB);
+    cv::resize(pr_img, pr_img, cv::Size(INPUT_W_HR, INPUT_H_HR));
     pr_img.convertTo(pr_img, CV_32FC3);
     if (!pr_img.isContinuous())
     {
         pr_img = pr_img.clone();
     }
-    std::memcpy(trt_ctx->data, pr_img.data, BATCH_SIZE * 3 * INPUT_W * INPUT_H * sizeof(int));
+    std::memcpy(trt_ctx->data, pr_img.data, BATCH_SIZE * 3 * INPUT_W_HR * INPUT_H_HR * sizeof(float));
 
     cudaHostGetDevicePointer((void **)&trt_ctx->buffers[trt_ctx->inputIndex], (void *)trt_ctx->data, 0);  // buffers[inputIndex]-->data
     cudaHostGetDevicePointer((void **)&trt_ctx->buffers[trt_ctx->outputIndex], (void *)trt_ctx->prob, 0); // buffers[outputIndex] --> prob
 
-    // cv::Mat pr_img = preprocess_img(img, INPUT_W, INPUT_H);
-
-    // // letterbox BGR to RGB
-    // i = 0;
-    // for (int row = 0; row < INPUT_H; ++row) {
-    //     uchar* uc_pixel = pr_img.data + row * pr_img.step;
-    //     for (int col = 0; col < INPUT_W; ++col) {
-    //         trt_ctx->data[i] = (float)uc_pixel[2] / 255.0;
-    //         trt_ctx->data[i + INPUT_H * INPUT_W] = (float)uc_pixel[1] / 255.0;
-    //         trt_ctx->data[i + 2 * INPUT_H * INPUT_W] = (float)uc_pixel[0] / 255.0;
-    //         uc_pixel += 3;
-    //         ++i;
-    //     }
-    // }
     cv::imwrite("pri_map.png", pr_img);
 
     auto start = std::chrono::system_clock::now();
@@ -155,22 +142,21 @@ int hrnet_trt_seg(void *h, cv::Mat &img,cv::Mat& outimg)
     std::cout << "delay_infer: " << delay_infer << " ms" << std::endl;
     
 
-    outimg = cv::Mat(INPUT_H, INPUT_W, CV_8UC1);
-    for (int row = 0; row < INPUT_H; ++row)
+    cv::Mat outimg = cv::Mat(INPUT_H_HR, INPUT_W_HR, CV_8UC1);
+    for (int row = 0; row < INPUT_H_HR; ++row)
     {
         uchar *uc_pixel = outimg.data + row * outimg.step;
-        for (int col = 0; col < INPUT_W; ++col)
+        for (int col = 0; col < INPUT_W_HR; ++col)
         {
-            uc_pixel[col] = (uchar)trt_ctx->prob[row * INPUT_W + col];
+            uc_pixel[col] = (uchar)trt_ctx->prob[row * INPUT_W_HR + col];
         }
     }
     cv::imwrite("out_map.png", outimg);
-    cv::Mat im_color;
+    // cv::Mat im_color;
     cv::cvtColor(outimg, im_color, cv::COLOR_GRAY2RGB);
-    cv::Mat lut = createLTU(NUM_CLASSES);
+    cv::Mat lut = createLTU(NUM_CLASSES_HR);
     cv::LUT(im_color, lut, im_color);
     cv::imwrite("color_map.png", im_color);
-    // std::cout << "output color image is " << im_color << std::endl;
 }
 
 void hrnet_trt_destroy(void *h)
