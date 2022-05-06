@@ -1,8 +1,8 @@
 /*
  * @Author: your name
  * @Date: 2022-01-10 23:53:55
- * @LastEditTime: 2022-01-12 22:33:58
- * @LastEditors: your name
+ * @LastEditTime: 2022-05-06 19:35:48
+ * @LastEditors: Eagleflag88 yijiang.xie@foxmail.com
  * @Description: 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  * @FilePath: /yolov5-deepsort-tensorrt/src/manager.cpp
  */
@@ -11,12 +11,16 @@ using std::vector;
 using namespace cv;
 static Logger gLogger;
 
-Trtyolosort::Trtyolosort(char *yolo_engine_path,char *sort_engine_path){
+Trtyolosort::Trtyolosort(char *yolo_engine_path, char *sort_engine_path, char *hrnet_engine_path){
 	sort_engine_path_ = sort_engine_path;
 	yolo_engine_path_ = yolo_engine_path;
 	trt_engine = yolov5_trt_create(yolo_engine_path_);
 	printf("create yolov5-trt , instance = %p\n", trt_engine);
 	DS = new DeepSort(sort_engine_path_, 128, 256, 0, &gLogger);
+	
+	hrnet_engine_path_ = hrnet_engine_path;
+	hrnet_trt_engine = hrnet_trt_create(yolo_engine_path_);
+	printf("create hrnet-trt , instance = %p\n", hrnet_trt_engine);
 
 }
 void Trtyolosort::showDetection(cv::Mat& img, std::vector<DetectBox>& boxes) {
@@ -40,4 +44,8 @@ int Trtyolosort::TrtDetect(cv::Mat &frame,float &conf_thresh,std::vector<DetectB
 	showDetection(frame,det);
 	return 1 ;
 	
+}
+
+void Trtyolosort::TrtSeg(cv::Mat &frame_in, cv::Mat &frame_out){
+	int n = hrnet_trt_seg(hrnet_trt_engine, frame_in, frame_out);
 }

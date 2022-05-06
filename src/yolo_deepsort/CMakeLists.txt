@@ -86,6 +86,7 @@ target_link_libraries(yolo_deepsort_node
                         nvinfer 
                         cudart 
                         yolov5_trt
+                        hrnet_seg
                         ${catkin_LIBRARIES}
                         ${OpenCV_LIBS}
                         )
