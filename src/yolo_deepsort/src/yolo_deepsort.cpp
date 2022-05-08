@@ -97,20 +97,20 @@ static void CAM_Callback(const sensor_msgs::ImageConstPtr& img_msg_ptr)
     std::vector<DetectBox> det;
 	auto start_draw_time = std::chrono::system_clock::now();
 
-    // clock_t start_draw,end_draw;
-	// start_draw = clock();
-    // auto start = std::chrono::system_clock::now();
-    // yosort.TrtDetect(frame,conf_thre,det);
-    // auto end = std::chrono::system_clock::now();
-    // int delay_infer = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-    // std::cout  << "delay_infer:" << delay_infer << "ms" << std::endl;
-    // yosort.showDetection(frame, det);
+    clock_t start_draw,end_draw;
+	start_draw = clock();
+    auto start = std::chrono::system_clock::now();
+    yosort.TrtDetect(frame,conf_thre,det);
+    auto end = std::chrono::system_clock::now();
+    int delay_infer = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    std::cout  << "delay_infer:" << delay_infer << "ms" << std::endl;
+    yosort.showDetection(frame, det);
     
-    // // Semantic Segmentation
-    // cv::Mat frame_seg_out;
-    // yosort.TrtSeg(frame_seg_in, frame_seg_out);
-    // cv::waitKey(1);
-    // cv::imshow("seg_img", frame_seg_out);
+    // Semantic Segmentation
+    cv::Mat frame_seg_out;
+    yosort.TrtSeg(frame_seg_in, frame_seg_out);
+    cv::waitKey(1);
+    cv::imshow("seg_img", frame_seg_out);
 
     // Lane Detection
     cv::Mat frame_ld_out;

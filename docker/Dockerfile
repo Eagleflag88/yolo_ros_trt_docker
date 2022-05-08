@@ -133,28 +133,6 @@ RUN cd /workspace/yolov5-deepsort-tensorrt/ && \
     cmake .. && \
     make 
 
-# Install ulfd
-
-RUN apt install -y iputils-ping
-
-RUN git clone https://github.com/Eagleflag88/Ultra-Fast-Lane-Detection.git
-
-RUN cp /workspace/tensorrtx/ufld/gen_wts.py /workspace/Ultra-Fast-Lane-Detection/ && \
-    cd /workspace/Ultra-Fast-Lane-Detection/model && \
-    cat tusimple0* > tusimple.tar.gz && \
-    tar xvzf tusimple.tar.gz && \
-    mv tusimple/tusimple_18.pth /workspace/Ultra-Fast-Lane-Detection/ && \
-    cd /workspace/Ultra-Fast-Lane-Detection/ && \
-    python3 gen_wts.py && \
-    mv lane.wts /workspace/tensorrtx/ufld/
-
-RUN cd /workspace/tensorrtx/ufld/ && \
-    mkdir build && \
-    cd build && \
-    cmake .. && \
-    make && \
-    ./lane_det -s
-    # ./lane_det -d ../samples/
 
 # Install HRNet
 RUN git clone https://github.com/Eagleflag88/HRNet-Semantic-Segmentation.git
@@ -175,15 +153,39 @@ RUN cd /workspace/tensorrtx/hrnet/hrnet-semantic-segmentation/ && \
     ./hrnet -s ../hrnet_w48.wts hrnet_w48.engine 48 && \
     ./hrnet -d  ./hrnet_w48.engine ../../../ufld/samples/
 
-# Install swin transformer -> Unsuccessful
-RUN git clone https://github.com/Eagleflag88/Swin-Transformer.git
+# # Install swin transformer -> Unsuccessful
+# RUN git clone https://github.com/Eagleflag88/Swin-Transformer.git
 
-RUN cd /workspace/Swin-Transformer/models && \
-    cat swin_transformer0* > swin_transformer.tar.gz && \
-    tar xvzf swin_transformer.tar.gz && \
-    cp /workspace/tensorrtx/swin-transformer/semantic-segmentation/gen_wts.py /workspace/Swin-Transformer/
+# RUN cd /workspace/Swin-Transformer/models && \
+#     cat swin_transformer0* > swin_transformer.tar.gz && \
+#     tar xvzf swin_transformer.tar.gz && \
+#     cp /workspace/tensorrtx/swin-transformer/semantic-segmentation/gen_wts.py /workspace/Swin-Transformer/
 
+# Install ulfd
 
+RUN apt install -y iputils-ping
+
+RUN git clone https://github.com/Eagleflag88/Ultra-Fast-Lane-Detection.git
+
+RUN cd /workspace/tensorrtx/ && \
+    git pull
+
+RUN cp /workspace/tensorrtx/ufld/gen_wts.py /workspace/Ultra-Fast-Lane-Detection/ && \
+    cd /workspace/Ultra-Fast-Lane-Detection/model && \
+    cat tusimple0* > tusimple.tar.gz && \
+    tar xvzf tusimple.tar.gz && \
+    mv tusimple/tusimple_18.pth /workspace/Ultra-Fast-Lane-Detection/ && \
+    cd /workspace/Ultra-Fast-Lane-Detection/ && \
+    python3 gen_wts.py && \
+    mv lane.wts /workspace/tensorrtx/ufld/
+
+RUN cd /workspace/tensorrtx/ufld/ && \
+    mkdir build && \
+    cd build && \
+    cmake .. && \
+    make && \
+    ./lane_det -s && \
+    ./lane_det -d ../samples/
 
 
 

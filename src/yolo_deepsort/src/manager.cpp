@@ -7,15 +7,15 @@ Trtyolosort::Trtyolosort(char *yolo_engine_path,
 						 char *sort_engine_path,
 						 char *hrnet_engine_path,
 						 char *ufld_engine_path){
-	// sort_engine_path_ = sort_engine_path;
-	// yolo_engine_path_ = yolo_engine_path;
-	// trt_engine = yolov5_trt_create(yolo_engine_path_);
-	// printf("create yolov5-trt , instance = %p\n", trt_engine);
-	// DS = new DeepSort(sort_engine_path_, 128, 256, 0, &gLogger);
+	sort_engine_path_ = sort_engine_path;
+	yolo_engine_path_ = yolo_engine_path;
+	trt_engine = yolov5_trt_create(yolo_engine_path_);
+	printf("create yolov5-trt , instance = %p\n", trt_engine);
+	DS = new DeepSort(sort_engine_path_, 128, 256, 0, &gLogger);
 	
-	// hrnet_engine_path_ = hrnet_engine_path;
-	// hrnet_trt_engine = hrnet_trt_create(hrnet_engine_path_);
-	// printf("create hrnet-trt , instance = %p\n", hrnet_trt_engine);
+	hrnet_engine_path_ = hrnet_engine_path;
+	hrnet_trt_engine = hrnet_trt_create(hrnet_engine_path_);
+	printf("create hrnet-trt , instance = %p\n", hrnet_trt_engine);
 
 	ufld_engine_path_ = ufld_engine_path;
 	ufld_trt_engine = ufld_trt_create(ufld_engine_path_);

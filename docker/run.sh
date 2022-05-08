@@ -18,6 +18,7 @@ docker run \
     --env="DISPLAY=$DISPLAY" \
     --env="QT_X11_NO_MITSHM=1" \
     -v /tmp/.X11-unix:/tmp/.X11-unix \
+    -v /work/tools/yolo_ros_trt_docker:/workspace/yolo_ros_trt_docker \
     yolov5_trt:latest
         # eagleflag/yolo_tensorrt_ros:v1.0
         # -v /home/eagleflag/Documents/MultiModalEvnPercption:/workspace/MultiModalEvnPercption \

@@ -187,7 +187,7 @@ void * ufld_trt_create(const char * engine_name)
     return (void *)trt_ctx;
 }
 
-int ufld_trt_det(void *h, cv::Mat &img_in,cv::Mat& im_color)
+int ufld_trt_det(void *h, cv::Mat &img,cv::Mat& vis)
 {
     UfldTRTContext *trt_ctx;
     int i;
@@ -200,15 +200,15 @@ int ufld_trt_det(void *h, cv::Mat &img_in,cv::Mat& im_color)
     int vis_w = 1280;
     int col_sample_w = 8;
 
-    cv::Mat vis;
-    cv::Mat img = cv::imread("/workspace/yolo_ros_trt_docker/src/yolo_deepsort/ufld/samples/Strada_Provinciale_BS_510_Sebina_Orientale.jpg");
+    // cv::Mat vis;
+    // cv::Mat img = cv::imread("/workspace/yolo_ros_trt_docker/src/yolo_deepsort/ufld/samples/Strada_Provinciale_BS_510_Sebina_Orientale.jpg");
     cv::resize(img, vis, cv::Size(vis_w, vis_h));
-    std::cout << "Resizing Finished" << std::endl;
+    // std::cout << "Resizing Finished" << std::endl;
     std::vector<float> result(INPUT_C_UFLD * INPUT_W_UFLD * INPUT_H_UFLD);
     result = prepareImage(img);
-    std::cout << "Image Input is " << result[0] <<std::endl;
+    // std::cout << "Image Input is " << result[0] <<std::endl;
     memcpy(trt_ctx->data, &result[0], INPUT_C_UFLD * INPUT_W_UFLD * INPUT_H_UFLD * sizeof(float));
-    std::cout << "Input preparation finished" << std::endl;
+    // std::cout << "Input preparation finished" << std::endl;
     // Run inference
     auto start = std::chrono::system_clock::now();
     doInference(*trt_ctx->exe_context, trt_ctx->data, trt_ctx->prob, BATCH_SIZE); //prob: size (101, 56, 4)
@@ -272,7 +272,7 @@ int ufld_trt_det(void *h, cv::Mat &img_in,cv::Mat& im_color)
     }
     // cv::imshow("lane_vis",vis);
     // cv::waitKey(1);
-    // cv::imwrite("lane_vis",vis);
+    cv::imwrite("lane_vis.jpg",vis);
 
 }
 
