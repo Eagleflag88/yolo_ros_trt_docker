@@ -2,7 +2,7 @@
  * @Author: Eagleflag88 yijiang.xie@foxmail.com
  * @Date: 2022-05-06 18:24:23
  * @LastEditors: Eagleflag88 yijiang.xie@foxmail.com
- * @LastEditTime: 2022-05-07 00:13:52
+ * @LastEditTime: 2022-05-07 11:17:43
  * @FilePath: /yolo_ros_trt_docker/src/yolo_deepsort/src/yolo_deepsort.cpp
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -43,8 +43,12 @@ static ros::Subscriber image_sub;
 char* yolo_engine = "/workspace/tensorrtx/yolov5/build/yolov5l.engine";
 char* sort_engine = "/workspace/deepsort-tensorrt/resources/deepsort.engine";
 char* hrnet_engine = "/workspace/tensorrtx/hrnet/hrnet-semantic-segmentation/build/hrnet_w48.engine";
+char* ufld_engine = "/workspace/tensorrtx/ufld/build/lane_det.engine";
 float conf_thre = 0.4;
-Trtyolosort yosort(yolo_engine,sort_engine, hrnet_engine);
+Trtyolosort yosort(yolo_engine,
+                   sort_engine, 
+                   hrnet_engine,
+                   ufld_engine);
 
 static void CAM_Callback(const sensor_msgs::ImageConstPtr& img_msg_ptr);
 
@@ -89,22 +93,29 @@ static void CAM_Callback(const sensor_msgs::ImageConstPtr& img_msg_ptr)
     cv::Mat frame;
     frame = cam_cv_ptr->image;
     cv::Mat frame_seg_in = frame.clone();
+    cv::Mat frame_ld_in = frame.clone();
     std::vector<DetectBox> det;
 	auto start_draw_time = std::chrono::system_clock::now();
 
-    clock_t start_draw,end_draw;
-	start_draw = clock();
-    auto start = std::chrono::system_clock::now();
-    yosort.TrtDetect(frame,conf_thre,det);
-    auto end = std::chrono::system_clock::now();
-    int delay_infer = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-    std::cout  << "delay_infer:" << delay_infer << "ms" << std::endl;
-    yosort.showDetection(frame, det);
+    // clock_t start_draw,end_draw;
+	// start_draw = clock();
+    // auto start = std::chrono::system_clock::now();
+    // yosort.TrtDetect(frame,conf_thre,det);
+    // auto end = std::chrono::system_clock::now();
+    // int delay_infer = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    // std::cout  << "delay_infer:" << delay_infer << "ms" << std::endl;
+    // yosort.showDetection(frame, det);
     
-    // Semantic Segmentation
-    cv::Mat frame_seg_out;
-    yosort.TrtSeg(frame_seg_in, frame_seg_out);
+    // // Semantic Segmentation
+    // cv::Mat frame_seg_out;
+    // yosort.TrtSeg(frame_seg_in, frame_seg_out);
+    // cv::waitKey(1);
+    // cv::imshow("seg_img", frame_seg_out);
+
+    // Lane Detection
+    cv::Mat frame_ld_out;
+    yosort.TrtUfld(frame_ld_in, frame_ld_out);
     cv::waitKey(1);
-    cv::imshow("seg_img", frame_seg_out);
+    cv::imshow("ld_img", frame_ld_out);
 
 }

@@ -40,6 +40,7 @@ catkin_package()
 include_directories(${PROJECT_SOURCE_DIR}/yolo/include)
 include_directories(${PROJECT_SOURCE_DIR}/deepsort/include)
 include_directories(${PROJECT_SOURCE_DIR}/hrnet_seg/include)
+include_directories(${PROJECT_SOURCE_DIR}/ufld/include)
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(
@@ -76,6 +77,17 @@ target_link_libraries(hrnet_seg
                       nvonnxparser
 )
 
+# ===== ufld =====
+aux_source_directory(${PROJECT_SOURCE_DIR}/ufld/src SRC_DIR)
+add_library(ufld SHARED ${SRC_DIR})
+target_link_libraries(ufld
+                      ${CUDA_LIBS} 
+                      ${OpenCV_LIBS} 
+                      cudart
+                      nvinfer
+                      nvonnxparser
+)
+
 # ===== main =====
 aux_source_directory(${PROJECT_SOURCE_DIR}/src M_SRC_DIR)
 include_directories(${PROJECT_SOURCE_DIR}/include)
@@ -87,6 +99,7 @@ target_link_libraries(yolo_deepsort_node
                         cudart 
                         yolov5_trt
                         hrnet_seg
+                        ufld
                         ${catkin_LIBRARIES}
                         ${OpenCV_LIBS}
                         )
