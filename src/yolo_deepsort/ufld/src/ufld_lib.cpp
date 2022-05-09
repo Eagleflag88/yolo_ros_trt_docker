@@ -44,6 +44,7 @@ typedef struct
 static void doInference(IExecutionContext& context, float* input, float* output, int batchSize) {
     const ICudaEngine& engine = context.getEngine();
 
+    std::cout << "Engine created" << std::endl;
     // Pointers to input and output device buffers to pass to engine.
     // Engine requires exactly IEngine::getNbBindings() number of buffers.
     assert(engine.getNbBindings() == 2);
@@ -53,11 +54,11 @@ static void doInference(IExecutionContext& context, float* input, float* output,
     // Note that indices are guaranteed to be less than IEngine::getNbBindings()
     const int inputIndex = engine.getBindingIndex(INPUT_BLOB_NAME_UFLD);
     const int outputIndex = engine.getBindingIndex(OUTPUT_BLOB_NAME_UFLD);
-
+    std::cout << "Input output binding" << std::endl;
     // Create GPU buffers on device
     CUDA_CHECK(cudaMalloc(&buffers[inputIndex], batchSize * INPUT_C_UFLD * INPUT_H_UFLD * INPUT_W_UFLD * sizeof(float)));
     CUDA_CHECK(cudaMalloc(&buffers[outputIndex], batchSize * OUTPUT_SIZE_UFLD * sizeof(float)));
-
+    std::cout << "GPU Buffer" << std::endl;
     // Create stream
     cudaStream_t stream;
     CUDA_CHECK(cudaStreamCreate(&stream));
@@ -203,12 +204,12 @@ int ufld_trt_det(void *h, cv::Mat &img,cv::Mat& vis)
     // cv::Mat vis;
     // cv::Mat img = cv::imread("/workspace/yolo_ros_trt_docker/src/yolo_deepsort/ufld/samples/Strada_Provinciale_BS_510_Sebina_Orientale.jpg");
     cv::resize(img, vis, cv::Size(vis_w, vis_h));
-    // std::cout << "Resizing Finished" << std::endl;
+    std::cout << "Resizing Finished" << std::endl;
     std::vector<float> result(INPUT_C_UFLD * INPUT_W_UFLD * INPUT_H_UFLD);
     result = prepareImage(img);
     // std::cout << "Image Input is " << result[0] <<std::endl;
     memcpy(trt_ctx->data, &result[0], INPUT_C_UFLD * INPUT_W_UFLD * INPUT_H_UFLD * sizeof(float));
-    // std::cout << "Input preparation finished" << std::endl;
+    std::cout << "Input preparation finished" << std::endl;
     // Run inference
     auto start = std::chrono::system_clock::now();
     doInference(*trt_ctx->exe_context, trt_ctx->data, trt_ctx->prob, BATCH_SIZE); //prob: size (101, 56, 4)

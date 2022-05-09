@@ -167,8 +167,6 @@ RUN apt install -y iputils-ping
 
 RUN git clone https://github.com/Eagleflag88/Ultra-Fast-Lane-Detection.git
 
-RUN cd /workspace/tensorrtx/ && \
-    git pull
 
 RUN cp /workspace/tensorrtx/ufld/gen_wts.py /workspace/Ultra-Fast-Lane-Detection/ && \
     cd /workspace/Ultra-Fast-Lane-Detection/model && \
