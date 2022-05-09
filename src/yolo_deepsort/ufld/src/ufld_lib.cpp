@@ -41,27 +41,27 @@ typedef struct
 }UfldTRTContext;
 
 
-static void doInference(IExecutionContext& context, float* input, float* output, int batchSize) {
-    const ICudaEngine& engine = context.getEngine();
+static void doInference(int inputIndex, int outputIndex, void **buffers, cudaStream_t &stream, IExecutionContext& context, float* input, float* output, int batchSize) {
+    // const ICudaEngine& engine = context.getEngine();
 
-    std::cout << "Engine created" << std::endl;
-    // Pointers to input and output device buffers to pass to engine.
-    // Engine requires exactly IEngine::getNbBindings() number of buffers.
-    assert(engine.getNbBindings() == 2);
-    void* buffers[2];
+    // std::cout << "Engine created" << std::endl;
+    // // Pointers to input and output device buffers to pass to engine.
+    // // Engine requires exactly IEngine::getNbBindings() number of buffers.
+    // assert(engine.getNbBindings() == 2);
+    // void* buffers[2];
 
-    // In order to bind the buffers, we need to know the names of the input and output tensors.
-    // Note that indices are guaranteed to be less than IEngine::getNbBindings()
-    const int inputIndex = engine.getBindingIndex(INPUT_BLOB_NAME_UFLD);
-    const int outputIndex = engine.getBindingIndex(OUTPUT_BLOB_NAME_UFLD);
-    std::cout << "Input output binding" << std::endl;
-    // Create GPU buffers on device
-    CUDA_CHECK(cudaMalloc(&buffers[inputIndex], batchSize * INPUT_C_UFLD * INPUT_H_UFLD * INPUT_W_UFLD * sizeof(float)));
-    CUDA_CHECK(cudaMalloc(&buffers[outputIndex], batchSize * OUTPUT_SIZE_UFLD * sizeof(float)));
-    std::cout << "GPU Buffer" << std::endl;
-    // Create stream
-    cudaStream_t stream;
-    CUDA_CHECK(cudaStreamCreate(&stream));
+    // // In order to bind the buffers, we need to know the names of the input and output tensors.
+    // // Note that indices are guaranteed to be less than IEngine::getNbBindings()
+    // const int inputIndex = engine.getBindingIndex(INPUT_BLOB_NAME_UFLD);
+    // const int outputIndex = engine.getBindingIndex(OUTPUT_BLOB_NAME_UFLD);
+    // std::cout << "Input output binding" << std::endl;
+    // // Create GPU buffers on device
+    // CUDA_CHECK(cudaMalloc(&buffers[inputIndex], batchSize * INPUT_C_UFLD * INPUT_H_UFLD * INPUT_W_UFLD * sizeof(float)));
+    // CUDA_CHECK(cudaMalloc(&buffers[outputIndex], batchSize * OUTPUT_SIZE_UFLD * sizeof(float)));
+    // std::cout << "GPU Buffer" << std::endl;
+    // // Create stream
+    // cudaStream_t stream;
+    // CUDA_CHECK(cudaStreamCreate(&stream));
 
     // DMA input batch data to device, infer on the batch asynchronously, and DMA output back to host
     CUDA_CHECK(cudaMemcpyAsync(buffers[inputIndex], input, batchSize * INPUT_C_UFLD * INPUT_H_UFLD * INPUT_W_UFLD * sizeof(float),
@@ -185,6 +185,21 @@ void * ufld_trt_create(const char * engine_name)
 
     delete[] trtModelStream;
 
+    // In order to bind the buffers, we need to know the names of the input and output tensors.
+    // Note that indices are guaranteed to be less than IEngine::getNbBindings()
+    trt_ctx->inputIndex = trt_ctx->engine->getBindingIndex(INPUT_BLOB_NAME_UFLD);
+    trt_ctx->outputIndex = trt_ctx->engine->getBindingIndex(OUTPUT_BLOB_NAME_UFLD);
+    assert(trt_ctx->inputIndex == 0);
+    assert(trt_ctx->outputIndex == 1);
+
+    // Create GPU buffers on device
+    CUDA_CHECK(cudaMalloc(&trt_ctx->buffers[trt_ctx->inputIndex], BATCH_SIZE * INPUT_C_UFLD * INPUT_H_UFLD * INPUT_W_UFLD * sizeof(float)));
+    CUDA_CHECK(cudaMalloc(&trt_ctx->buffers[trt_ctx->outputIndex], BATCH_SIZE * OUTPUT_SIZE_UFLD * sizeof(float)));
+    std::cout << "GPU Buffer Allocated" << std::endl;
+    // Create stream
+    cudaStream_t stream;
+    CUDA_CHECK(cudaStreamCreate(&trt_ctx->cuda_stream));
+    std::cout << "Cuda stream Created" << std::endl;
     return (void *)trt_ctx;
 }
 
@@ -212,7 +227,8 @@ int ufld_trt_det(void *h, cv::Mat &img,cv::Mat& vis)
     std::cout << "Input preparation finished" << std::endl;
     // Run inference
     auto start = std::chrono::system_clock::now();
-    doInference(*trt_ctx->exe_context, trt_ctx->data, trt_ctx->prob, BATCH_SIZE); //prob: size (101, 56, 4)
+    // doInference(*trt_ctx->exe_context, trt_ctx->data, trt_ctx->prob, BATCH_SIZE); //prob: size (101, 56, 4)
+    doInference(trt_ctx->inputIndex, trt_ctx->outputIndex, trt_ctx->buffers, trt_ctx->cuda_stream, *trt_ctx->exe_context, trt_ctx->data, trt_ctx->prob, BATCH_SIZE); //prob: size (101, 56, 4)
     auto end = std::chrono::system_clock::now();
     std::cout << "inference time is "
                 << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count()

@@ -68,7 +68,7 @@ int main(int argc, char **argv)
 	bool is_first = true;
 
     cv::VideoCapture capture;
-    capture.open("/workspace/yolo_ros_trt_docker/Data/234220097-1-16.mp4");  // 从视频文件读取
+    capture.open("/workspace/yolo_ros_trt_docker/Data/41211565_da2-1-16.mp4");  // 从视频文件读取
     cv::Mat frame;  
     std::vector<DetectBox> det;
     cv::Mat frame_ld_out;
@@ -78,25 +78,25 @@ int main(int argc, char **argv)
     while (capture.read(frame)) {
         frame_ld_in = frame.clone();
         frame_seg_in = frame.clone();
-		// clock_t start_draw,end_draw;
-        // start_draw = clock();
-        // auto start = std::chrono::system_clock::now();
-        // yosort.TrtDetect(frame,conf_thre,det);
-        // auto end = std::chrono::system_clock::now();
-        // int delay_infer = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-        // std::cout  << "delay_infer:" << delay_infer << "ms" << std::endl;
-        // yosort.showDetection(frame, det);
+		clock_t start_draw,end_draw;
+        start_draw = clock();
+        auto start = std::chrono::system_clock::now();
+        yosort.TrtDetect(frame,conf_thre,det);
+        auto end = std::chrono::system_clock::now();
+        int delay_infer = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+        std::cout  << "delay_infer:" << delay_infer << "ms" << std::endl;
+        yosort.showDetection(frame, det);
 
-        // // Lane Detection
-        // yosort.TrtUfld(frame_ld_in, frame_ld_out);
-        // cv::waitKey(1);
-        // cv::imshow("ld_img", frame_ld_out);
+        // Lane Detection
+        yosort.TrtUfld(frame_ld_in, frame_ld_out);
+        cv::waitKey(1);
+        cv::imshow("ld_img", frame_ld_out);
 
         // Semantic Segmentation
         
-        yosort.TrtSeg(frame_seg_in, frame_seg_out);
-        cv::waitKey(1);
-        cv::imshow("seg_img", frame_seg_out);
+        // yosort.TrtSeg(frame_seg_in, frame_seg_out);
+        // cv::waitKey(1);
+        // cv::imshow("seg_img", frame_seg_out);
 	}
 	
     capture.release();
