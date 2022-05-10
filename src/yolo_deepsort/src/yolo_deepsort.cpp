@@ -68,7 +68,7 @@ int main(int argc, char **argv)
 	bool is_first = true;
 
     cv::VideoCapture capture;
-    capture.open("/workspace/yolo_ros_trt_docker/Data/41211565_da2-1-16.mp4");  // 从视频文件读取
+    capture.open("/workspace/yolo_ros_trt_docker/Data/drving_through_toyky.mp4");  // 从视频文件读取
     cv::Mat frame;  
     std::vector<DetectBox> det;
     cv::Mat frame_ld_out;
@@ -78,6 +78,7 @@ int main(int argc, char **argv)
     while (capture.read(frame)) {
         frame_ld_in = frame.clone();
         frame_seg_in = frame.clone();
+        
 		clock_t start_draw,end_draw;
         start_draw = clock();
         auto start = std::chrono::system_clock::now();
@@ -92,14 +93,13 @@ int main(int argc, char **argv)
         cv::waitKey(1);
         cv::imshow("ld_img", frame_ld_out);
 
-        // Semantic Segmentation
-        
+        // // Semantic Segmentation
         // yosort.TrtSeg(frame_seg_in, frame_seg_out);
         // cv::waitKey(1);
         // cv::imshow("seg_img", frame_seg_out);
 	}
 	
-    capture.release();
+    // capture.release();
 
     int count = 0;
     std_msgs::String msg;
@@ -145,10 +145,10 @@ static void CAM_Callback(const sensor_msgs::ImageConstPtr& img_msg_ptr)
     cv::waitKey(1);
     cv::imshow("seg_img", frame_seg_out);
 
-    // Lane Detection
-    cv::Mat frame_ld_out;
-    yosort.TrtUfld(frame_ld_in, frame_ld_out);
-    cv::waitKey(1);
-    cv::imshow("ld_img", frame_ld_out);
+    // // Lane Detection
+    // cv::Mat frame_ld_out;
+    // yosort.TrtUfld(frame_ld_in, frame_ld_out);
+    // cv::waitKey(1);
+    // cv::imshow("ld_img", frame_ld_out);
 
 }
