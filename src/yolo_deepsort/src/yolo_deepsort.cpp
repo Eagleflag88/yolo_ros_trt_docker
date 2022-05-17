@@ -63,13 +63,14 @@ int main(int argc, char **argv)
     ros::NodeHandle nh;
     image_transport::ImageTransport it(nh);
     // Register the Subscriber
-    // image_transport::Subscriber image_sub = it.subscribe("/kitti/camera_color_left/image_raw", 10, CAM_Callback);
+    // image_transport::Subscriber image_sub = it.subscribe("/kitti/camera_color_left/image_raw", 10, CAM_Callback); //kitti
     // image_transport::Subscriber image_sub = it.subscribe("cam_front/raw", 10, CAM_Callback);
-    
-    compressed_image_sub = nh.subscribe("/CAM_FRONT/image_rect_compressed", 10, Compressed_CAM_Callback);
+    image_transport::Subscriber image_sub = it.subscribe("/stereo/left/image_raw_color", 1, CAM_Callback); // kaist
+    compressed_image_sub = nh.subscribe("/CAM_FRONT/image_rect_compressed", 10000, Compressed_CAM_Callback);
     
     pub_image_track = nh.advertise<sensor_msgs::Image>("image_track", 1000);
     chatter_pub = nh.advertise<std_msgs::String>("chatter", 1000);
+
 
     map<int,vector<int>> personstate;
 	map<int,int> classidmap;
@@ -131,8 +132,10 @@ static void CAM_Callback(const sensor_msgs::ImageConstPtr& img_msg_ptr)
     cv_bridge::CvImagePtr cam_cv_ptr = cv_bridge::toCvCopy(img_msg_ptr);
     ROS_INFO("Get a image from camera");
     // std::cout << "Number of column is " << cam_cv_ptr->image.cols << std::endl;
-    cv::Mat frame;
-    frame = cam_cv_ptr->image;
+    cv::Mat frame_raw, frame;
+    double scaling = 0.75;
+    frame_raw = cam_cv_ptr->image;
+    cv::resize(frame_raw, frame, cv::Size(frame_raw.cols*scaling, frame_raw.rows*scaling), 0, 0, CV_INTER_LINEAR);
     cv::Mat frame_seg_in = frame.clone();
     cv::Mat frame_ld_in = frame.clone();
     std::vector<DetectBox> det;
@@ -147,11 +150,11 @@ static void CAM_Callback(const sensor_msgs::ImageConstPtr& img_msg_ptr)
     std::cout  << "delay_infer:" << delay_infer << "ms" << std::endl;
     yosort.showDetection(frame, det);
     
-    // Semantic Segmentation
-    cv::Mat frame_seg_out;
-    yosort.TrtSeg(frame_seg_in, frame_seg_out);
-    cv::waitKey(1);
-    cv::imshow("seg_img", frame_seg_out);
+    // // Semantic Segmentation
+    // cv::Mat frame_seg_out;
+    // yosort.TrtSeg(frame_seg_in, frame_seg_out);
+    // cv::waitKey(1);
+    // cv::imshow("seg_img", frame_seg_out);
 
     // Lane Detection
     cv::Mat frame_ld_out;
@@ -177,6 +180,7 @@ static void Compressed_CAM_Callback(const sensor_msgs::CompressedImageConstPtr& 
       //ROS_ERROR("Could not convert from '%s' to 'bgr8'.", msg->encoding.c_str());
     }
 
+    // std::cout << "Frame rows and cols are " << frame.rows << " " << frame.cols << std::endl;
     cv::Mat frame_seg_in = frame.clone();
     cv::Mat frame_ld_in = frame.clone();
     std::vector<DetectBox> det;
@@ -197,10 +201,10 @@ static void Compressed_CAM_Callback(const sensor_msgs::CompressedImageConstPtr& 
     // cv::waitKey(1);
     // cv::imshow("seg_img", frame_seg_out);
 
-    // // Lane Detection
-    // cv::Mat frame_ld_out;
-    // yosort.TrtUfld(frame_ld_in, frame_ld_out);
-    // cv::waitKey(1);
-    // cv::imshow("ld_img", frame_ld_out);
+    // Lane Detection
+    cv::Mat frame_ld_out;
+    yosort.TrtUfld(frame_ld_in, frame_ld_out);
+    cv::waitKey(1);
+    cv::imshow("ld_img", frame_ld_out);
 
 }

@@ -1,19 +1,17 @@
-FROM nvcr.io/nvidia/tensorrt:20.03-py3
+FROM nvcr.io/nvidia/tensorrt:21.05-py3
 
 RUN sed -i s:/archive.ubuntu.com:/mirrors.tuna.tsinghua.edu.cn/ubuntu:g /etc/apt/sources.list
 RUN cat /etc/apt/sources.list
 RUN apt-get clean
 RUN apt-get -y update --fix-missing
 
-# git clone tensorrtx
-RUN git clone https://github.com/Eagleflag88/tensorrtx.git
-
 # install pytorch
-RUN curl https://bootstrap.pypa.io/pip/3.6/get-pip.py -o get-pip.py
-RUN python3 get-pip.py --force-reinstall
 RUN pip3 config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
 RUN pip3 install pip -U
-RUN pip3 install torch torchvision torchaudio 
+RUN pip3 install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu113
+
+# git clone tensorrtx
+RUN git clone https://github.com/Eagleflag88/tensorrtx.git
 
 # Download yolov5
 RUN git clone -b v6.0 https://github.com/ultralytics/yolov5.git
@@ -29,10 +27,17 @@ RUN cd yolov5/ && \
 ENV TZ=Asia/Shanghai
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
-RUN apt install software-properties-common -y
-RUN add-apt-repository -y ppa:timsc/opencv-3.4
-RUN apt-get update
-RUN apt-get install -y libopencv-dev libopencv-dnn-dev libopencv-shape3.4-dbg 
+RUN apt-get update && \
+    apt-get install -y software-properties-common
+
+RUN git clone -b 3.4 https://github.com/opencv/opencv
+RUN git clone -b 3.4 https://github.com/opencv/opencv_contrib.git
+RUN cd /workspace/opencv/ && \
+    mkdir build && \
+    cd build && \
+    cmake -D OPENCV_EXTRA_MODULES_PATH=/workspace/opencv_contrib/modules .. && \
+    make -j4 && \
+    make install 
 
 # Build tensorrtx/yolov5 and run
 RUN mkdir /usr/include/opencv
@@ -44,7 +49,8 @@ RUN cd /workspace/tensorrtx/yolov5/ && \
     cmake .. && \
     make
 
-# Install ROS-Melodic
+# Install ROS-Noetic
+
 # install packages
 RUN apt-get update && apt-get install -q -y --no-install-recommends \
     dirmngr \
@@ -52,57 +58,45 @@ RUN apt-get update && apt-get install -q -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # setup sources.list
-RUN echo "deb http://packages.ros.org/ros/ubuntu bionic main" > /etc/apt/sources.list.d/ros1-latest.list
+RUN echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list
 
-# setup keys
-RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C1CF6E31E6BADE8868B172B4F42ED6FBAB17C654
+# # setup keys
+RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys F42ED6FBAB17C654
 
 # setup environment
 ENV LANG C.UTF-8
 ENV LC_ALL C.UTF-8
 
-ENV ROS_DISTRO melodic
+ENV ROS_DISTRO noetic
 
 # install ros packages
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    ros-melodic-desktop \
+    ros-noetic-desktop \
     && rm -rf /var/lib/apt/lists/*
 
 # install bootstrap tools
 RUN apt-get update && apt-get install --no-install-recommends -y \
-    build-essential \
-    python-rosdep \
-    python-rosinstall \
-    python-vcstools \
-    && rm -rf /var/lib/apt/lists/*
+    python3-rosdep python3-rosinstall python3-rosinstall-generator python3-wstool build-essential && \
+    rm -rf /var/lib/apt/lists/*
 
-RUN echo "source /opt/ros/melodic/setup.bash" >> ~/.bashrc
+RUN echo "source /opt/ros/noetic/setup.bash" >> ~/.bashrc
 RUN source ~/.bashrc
 
 RUN apt update -y && apt upgrade 
-RUN apt install -y mlocate ros-melodic-pcl-conversions ros-melodic-pcl-ros
+RUN apt install -y mlocate ros-noetic-pcl-conversions ros-noetic-pcl-ros
 
-# Install detr
-RUN git clone https://github.com/facebookresearch/detr.git
-RUN cd /workspace/detr && \
-    wget https://dl.fbaipublicfiles.com/detr/detr-r50-e632da11.pth
+# # Install detr
+# RUN git clone https://github.com/facebookresearch/detr.git
+# RUN cd /workspace/detr && \
+#     wget https://dl.fbaipublicfiles.com/detr/detr-r50-e632da11.pth
     
-RUN cp /workspace/tensorrtx/detr/gen_wts.py /workspace/detr/ && \
-    pip3 install packaging 
-RUN cd /workspace/detr && \
-    python3 gen_wts.py
+# RUN cp /workspace/tensorrtx/detr/gen_wts.py /workspace/detr/ && \
+#     pip3 install packaging 
+# RUN cd /workspace/detr && \
+#     python3 gen_wts.py
 
 RUN ./tensorrtx/yolov5/build/yolov5 -s tensorrtx/yolov5/build/yolov5s.wts tensorrtx/yolov5/build/yolov5s.engine s
 
-RUN cd yolov5/ && \
-    ls && \
-    wget https://github.com/ultralytics/yolov5/releases/download/v6.1/yolov5l.pt
-
-RUN cd yolov5/ && \
-    python3 gen_wts.py -w yolov5l.pt -o yolov5l.wts && \
-    cp yolov5l.wts /workspace/tensorrtx/yolov5/build/
-
-RUN ./tensorrtx/yolov5/build/yolov5 -s tensorrtx/yolov5/build/yolov5l.wts tensorrtx/yolov5/build/yolov5l.engine l
 
 # Install deep sort pytorch
 RUN git clone https://github.com/Eagleflag88/deep_sort_pytorch.git
@@ -185,20 +179,19 @@ RUN cd /workspace/tensorrtx/ufld/ && \
     ./lane_det -s && \
     ./lane_det -d ../samples/
 
-RUN apt-get -y install libgoogle-glog-dev libatlas-base-dev libeigen3-dev libsuitesparse-dev
-RUN git clone https://github.com/ceres-solver/ceres-solver.git
-RUN cd /workspace/ceres-solver/ && \
-    git checkout 2.0.0 && \
-    rm -rf .git/ && \
-    mkdir build && \
-    cd build && \
-    cmake .. && \
-    make -j4 && \
-    make install
+RUN cd yolov5/ && \
+    ls && \
+    wget https://github.com/ultralytics/yolov5/releases/download/v6.1/yolov5l.pt
+
+RUN cd yolov5/ && \
+    python3 gen_wts.py -w yolov5l.pt -o yolov5l.wts && \
+    cp yolov5l.wts /workspace/tensorrtx/yolov5/build/
+
+RUN ./tensorrtx/yolov5/build/yolov5 -s tensorrtx/yolov5/build/yolov5l.wts tensorrtx/yolov5/build/yolov5l.engine l
 
 
 # RUN git clone https://github.com/Eagleflag88/yolo_ros_trt_docker.git
-# RUN . /opt/ros/melodic/setup.sh && \
+# RUN . /opt/ros/noetic/setup.sh && \
 #     cd /workspace/yolo_ros_trt_docker && \
 #     catkin_make -j2
 
