@@ -1,5 +1,6 @@
 /build/
 /devel/
 /Data/
+/deeplearning4AD/build/
 .vscode/
 _bus.jpg

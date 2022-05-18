@@ -65,8 +65,8 @@ int main(int argc, char **argv)
     // Register the Subscriber
     // image_transport::Subscriber image_sub = it.subscribe("/kitti/camera_color_left/image_raw", 10, CAM_Callback); //kitti
     // image_transport::Subscriber image_sub = it.subscribe("cam_front/raw", 10, CAM_Callback);
-    image_transport::Subscriber image_sub = it.subscribe("/stereo/left/image_raw_color", 1, CAM_Callback); // kaist
-    compressed_image_sub = nh.subscribe("/CAM_FRONT/image_rect_compressed", 10000, Compressed_CAM_Callback);
+    // compressed_image_sub = nh.subscribe("/CAM_FRONT/image_rect_compressed", 10000, Compressed_CAM_Callback); // nuscene
+    compressed_image_sub = nh.subscribe("/stereo/left/image_raw_color", 100, Compressed_CAM_Callback); //kaist
     
     pub_image_track = nh.advertise<sensor_msgs::Image>("image_track", 1000);
     chatter_pub = nh.advertise<std_msgs::String>("chatter", 1000);

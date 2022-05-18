@@ -20,6 +20,7 @@ docker run \
     -v /tmp/.X11-unix:/tmp/.X11-unix \
     -v /work/tools/yolo_ros_trt_docker:/workspace/yolo_ros_trt_docker \
     -v /work/tools/catkin_ws_svf_slam:/workspace/catkin_ws_svf_slam \
+    -v /work/DataSet:/workspace/data \
     yolov5_trt:latest
     # yolov5_trt_py38:latest
     
