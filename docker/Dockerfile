@@ -196,6 +196,13 @@ RUN cd /workspace/ceres-solver/ && \
     make -j4 && \
     make install
 
+RUN git clone https://github.com/gwli/brisk.git
+RUN cd /workspace/brisk/ && \
+    mkdir build && \
+    cd build && \
+    cmake .. && \
+    make -j4 && \
+    make install
 
 # RUN git clone https://github.com/Eagleflag88/yolo_ros_trt_docker.git
 # RUN . /opt/ros/melodic/setup.sh && \
