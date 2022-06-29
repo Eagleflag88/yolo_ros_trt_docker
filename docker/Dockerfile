@@ -204,12 +204,43 @@ RUN cd /workspace/brisk/ && \
     make -j4 && \
     make install
 
+RUN git clone -b 3.4 https://github.com/opencv/opencv
+RUN git clone -b 3.4 https://github.com/opencv/opencv_contrib.git
+RUN cd /workspace/opencv/ && \
+    mkdir build && \
+    cd build && \
+    cmake -D OPENCV_EXTRA_MODULES_PATH=/workspace/opencv_contrib/modules -D WITH_CUDA=ON -D ENABLE_FAST_MATH=1 -D CUDA_FAST_MATH=1 -D WITH_CUBLAS=1 .. && \
+    make -j4
+
+# RUN cd /workspace/opencv/build/ && \
+#     make install
+
 # RUN git clone https://github.com/Eagleflag88/yolo_ros_trt_docker.git
 # RUN . /opt/ros/melodic/setup.sh && \
 #     cd /workspace/yolo_ros_trt_docker && \
 #     catkin_make -j2
 
+RUN echo "Installing Pangolin dependencies ..." && \
+    apt-get install -y \
+    libglew-dev \
+    libboost-dev \
+    libboost-thread-dev \
+    libboost-filesystem-dev \
+    ffmpeg \
+    libavutil-dev \
+    libpng-dev
 
+RUN echo "Installing Pangolin last version ..." && \
+    git clone https://github.com/stevenlovegrove/Pangolin.git Pangolin
+
+RUN cd /workspace/Pangolin/ && \
+    mkdir build && \
+    cd build/ && \
+    cmake -D CMAKE_BUILD_TYPE=RELEASE \
+    -DCPP11_NO_BOOST=1 \
+    /workspace/Pangolin/ && \
+    make -j4 && \
+    make install
 
 
 

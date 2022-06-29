@@ -22,6 +22,9 @@ docker run \
     -v /work/tools/catkin_ws_dynamic_slam:/workspace/catkin_ws_dynamic_slam \
     -v /work/tools/catkin_ws_iceba:/workspace/catkin_ws_iceba \
     -v /work/tools/catkin_ws_svf:/workspace/catkin_ws_svf \
+    -v /work/tools/catkin_ws_orbvins:/workspace/catkin_ws_orbvins \
+    -v /work/tools/catkin_ws_hzp:/workspace/catkin_ws_hzp \
+    -v /home/eagleflag/Downloads/semantic_mapping3d-0523/semantic_mapping:/workspace/semantic_mapping \
     -v /work/DataSet:/workspace/data \
     yolov5_trt:latest
     # yolov5_trt_py38:latest
